@@ -178,7 +178,7 @@ ORDER BY
 ```
 **Result:**
 
-91 rows affeted
+- 91 rows were affeted, showing only the top 10
 
 | CustomerID | CompanyName                   | Region        |
 |------------|-------------------------------|---------------|
@@ -300,7 +300,7 @@ ORDER BY o.OrderID, d.ProductID
 ```
 **Result:**
 
-2155 rows affected
+2155 rows were affeted, showing only the top 10
 
 | EmployeeID | LastName  | OrderID | ProductName                      | Quantity |
 |------------|-----------|---------|----------------------------------|----------|
