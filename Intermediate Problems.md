@@ -28,7 +28,7 @@ ORDER BY TotalProducts DESC
 
 **21. In the Customers table, show the total number of customers per Country and City.**
 ```SQL
-SELECT
+SELECT TOP(10)
 	Country,
 	City,
 	COUNT(CustomerID) AS TotalCustomers
@@ -38,77 +38,21 @@ ORDER BY TotalCustomers DESC
 ```
 **Result:**
 
-| Country     | City            | TotalCustomers |
-|-------------|-----------------|----------------|
-| UK          | London          | 6              |
-| Mexico      | México D.F.     | 5              |
-| Brazil      | Sao Paulo       | 4              |
-| Brazil      | Rio de Janeiro  | 3              |
-| Spain       | Madrid          | 3              |
-| Argentina   | Buenos Aires    | 3              |
-| France      | Paris           | 2              |
-| USA         | Portland        | 2              |
-| France      | Nantes          | 2              |
-| Portugal    | Lisboa          | 2              |
-| Finland     | Oulu            | 1              |
-| Italy       | Reggio Emilia   | 1              |
-| France      | Reims           | 1              |
-| Brazil      | Resende         | 1              |
-| Austria     | Salzburg        | 1              |
-| Venezuela   | San Cristóbal   | 1              |
-| USA         | San Francisco   | 1              |
-| USA         | Seattle         | 1              |
-| Spain       | Sevilla         | 1              |
-| Norway      | Stavern         | 1              |
-| France      | Strasbourg      | 1              |
-| Germany     | Stuttgart       | 1              |
-| Italy       | Torino          | 1              |
-| France      | Toulouse        | 1              |
-| Canada      | Tsawassen       | 1              |
-| Canada      | Vancouver       | 1              |
-| France      | Versailles      | 1              |
-| USA         | Walla Walla     | 1              |
-| Poland      | Warszawa        | 1              |
-| USA         | Butte           | 1              |
-| Brazil      | Campinas        | 1              |
-| Venezuela   | Caracas         | 1              |
-| Belgium     | Charleroi       | 1              |
-| Ireland     | Cork            | 1              |
-| UK          | Cowes           | 1              |
-| Germany     | Cunewalde       | 1              |
-| USA         | Elgin           | 1              |
-| USA         | Eugene          | 1              |
-| Germany     | Frankfurt a.M.  | 1              |
-| Switzerland | Genève          | 1              |
-| Austria     | Graz            | 1              |
-| Finland     | Helsinki        | 1              |
-| Venezuela   | I. de Margarita | 1              |
-| USA         | Kirkland        | 1              |
-| Denmark     | Kobenhavn       | 1              |
-| Germany     | Köln            | 1              |
-| USA         | Lander          | 1              |
-| Germany     | Leipzig         | 1              |
-| France      | Lille           | 1              |
-| Germany     | Mannheim        | 1              |
-| France      | Marseille       | 1              |
-| Sweden      | Luleå           | 1              |
-| France      | Lyon            | 1              |
-| Canada      | Montréal        | 1              |
-| Germany     | München         | 1              |
-| Germany     | Münster         | 1              |
-| Germany     | Aachen          | 1              |
-| USA         | Albuquerque     | 1              |
-| USA         | Anchorage       | 1              |
-| Denmark     | Århus           | 1              |
-| Spain       | Barcelona       | 1              |
-| Venezuela   | Barquisimeto    | 1              |
-| Italy       | Bergamo         | 1              |
-| Germany     | Berlin          | 1              |
-| Switzerland | Bern            | 1              |
-| USA         | Boise           | 1              |
-| Sweden      | Bräcke          | 1              |
-| Germany     | Brandenburg     | 1              |
-| Belgium     | Bruxelles       | 1              |
+- 69 rows were affeted, showing only the top 10
+
+| Country   | City           | TotalCustomers |
+|-----------|----------------|----------------|
+| UK        | London         | 6              |
+| Mexico    | México D.F.    | 5              |
+| Brazil    | Sao Paulo      | 4              |
+| Argentina | Buenos Aires   | 3              |
+| Spain     | Madrid         | 3              |
+| Brazil    | Rio de Janeiro | 3              |
+| Portugal  | Lisboa         | 2              |
+| France    | Nantes         | 2              |
+| France    | Paris          | 2              |
+| USA       | Portland       | 2              |
+
 
 **22. What products do we have in our inventory that should be reordered? Order the results by ProductID.**
 ```SQL
@@ -300,7 +244,7 @@ ORDER BY o.OrderID, d.ProductID
 ```
 **Result:**
 
-2155 rows were affeted, showing only the top 10
+- 2155 rows were affeted, showing only the top 10
 
 | EmployeeID | LastName  | OrderID | ProductName                      | Quantity |
 |------------|-----------|---------|----------------------------------|----------|
