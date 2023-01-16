@@ -192,7 +192,7 @@ WHERE ShipCountry = 'France' OR ShipCountry = 'Belgium'
 ```
 **Result:**
 
-The result generates 96 rows, so I decided to only show the first 10 rows.
+- 96 rows were affeted, showing only the top 10
 
 | OrderID | CustomerID | ShipCountry |
 |---------|------------|-------------|
@@ -219,7 +219,7 @@ WHERE ShipCountry IN ('Brazil', 'Mexico', 'Argentina', 'Venezuela')
 ```
 **Result:**
 
-The result generates 173 rows, so I decided to only show the first 10 rows.
+- 173 rows were affeted, showing only the top 10
 
 | OrderID | CustomerID | ShipCountry |
 |---------|------------|-------------|
@@ -318,7 +318,7 @@ ORDER BY OrderID, ProductID
 ```
 **Result:**
 
-The result generates 2155 rows, so I decided to only show the first 10 rows.
+- 2155 rows were affeted, showing only the top 10
 
 | OrderID | ProductID | UnitPrice | Quantity | TotalPrice |
 |---------|-----------|-----------|----------|------------|
@@ -427,7 +427,7 @@ LEFT JOIN Suppliers s
 ```
 **Result:**
 
-The result generates 77 rows, so I decided to only show the first 10 rows.
+- 77 rows were affeted, showing only the top 10
 
 | ProductID | ProductName                     | CompanyName                |
 |-----------|---------------------------------|----------------------------|
@@ -455,7 +455,7 @@ WHERE OrderID < 10300
 ```
 **Result:**
 
-The result generates 52 rows, so I decided to only show the first 10 rows.
+- 52 rows were affeted, showing only the top 10
 
 | OrderID | OrderDate  | CompanyName      |
 |---------|------------|------------------|
@@ -469,31 +469,5 @@ The result generates 52 rows, so I decided to only show the first 10 rows.
 | 10255   | 2014-07-12 | Federal Shipping |
 | 10256   | 2014-07-15 | United Package   |
 | 10257   | 2014-07-16 | Federal Shipping |
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
