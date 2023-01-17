@@ -97,10 +97,115 @@ ORDER BY TotalWithDiscount DESC
 **35. At the end of the month, salespeople are likely to try much harder to get orders, to meet their month-end quotas. Show all orders made on the last day of the
 month. Order by EmployeeID and OrderID.**
 ```SQL
-
+SELECT
+	EmployeeID,
+	OrderID,
+	OrderDate
+FROM Orders
+WHERE OrderDate = EOMONTH(OrderDate )
+ORDER BY EmployeeID, OrderID
 ```
 **Result:**
 
+| EmployeeID | OrderID | OrderDate               |
+|------------|---------|-------------------------|
+| 1          | 10461   | 2015-02-28 00:00:00.000 |
+| 1          | 10616   | 2015-07-31 00:00:00.000 |
+| 2          | 10583   | 2015-06-30 00:00:00.000 |
+| 2          | 10686   | 2015-09-30 00:00:00.000 |
+| 2          | 10989   | 2016-03-31 00:00:00.000 |
+| 2          | 11060   | 2016-04-30 00:00:00.000 |
+| 3          | 10432   | 2015-01-31 00:00:00.000 |
+| 3          | 10988   | 2016-03-31 00:00:00.000 |
+| 3          | 11063   | 2016-04-30 00:00:00.000 |
+| 4          | 10343   | 2014-10-31 00:00:00.000 |
+| 4          | 10522   | 2015-04-30 00:00:00.000 |
+| 4          | 10584   | 2015-06-30 00:00:00.000 |
+| 4          | 10617   | 2015-07-31 00:00:00.000 |
+| 4          | 10725   | 2015-10-31 00:00:00.000 |
+| 4          | 11061   | 2016-04-30 00:00:00.000 |
+| 4          | 11062   | 2016-04-30 00:00:00.000 |
+| 5          | 10269   | 2014-07-31 00:00:00.000 |
+| 6          | 10317   | 2014-09-30 00:00:00.000 |
+| 7          | 10490   | 2015-03-31 00:00:00.000 |
+| 8          | 10399   | 2014-12-31 00:00:00.000 |
+| 8          | 10460   | 2015-02-28 00:00:00.000 |
+| 8          | 10491   | 2015-03-31 00:00:00.000 |
+| 8          | 10987   | 2016-03-31 00:00:00.000 |
+| 9          | 10687   | 2015-09-30 00:00:00.000 |
+
+**36. The Northwind mobile app developers are testing an app that customers will use to show orders. In order to make sure that even the largest orders will show up correctly on the app, they'd like some samples of orders that have lots of individual line items. Show the 10 orders with the most line items, in order of total line items.**
+```SQL
+SELECT TOP(10)
+	OrderID,
+	COUNT(OrderID) AS TotalOrdersByOrderID
+FROM OrderDetails
+GROUP BY OrderID
+ORDER BY COUNT(OrderID) DESC
+```
+**Result:**
+
+| OrderID | TotalOrdersByOrderID |
+|---------|----------------------|
+| 11077   | 25                   |
+| 10657   | 6                    |
+| 10847   | 6                    |
+| 10979   | 6                    |
+| 10273   | 5                    |
+| 10294   | 5                    |
+| 10309   | 5                    |
+| 10324   | 5                    |
+| 10325   | 5                    |
+| 10337   | 5                    |
+
+**37. The Northwind mobile app developers would now like to just get a random assortment of orders for beta testing on their app. Show a random set of 2% of all orders.**
+```SQL
+SELECT TOP 2 PERCENT
+	OrderID
+FROM Orders
+ORDER BY NewID()
+```
+**Result:**
+
+| OrderID |
+|---------|
+| 10689   |
+| 10403   |
+| 10892   |
+| 10961   |
+| 10757   |
+| 10543   |
+| 10835   |
+| 10641   |
+| 10937   |
+| 10359   |
+| 10701   |
+| 10349   |
+| 10710   |
+| 10913   |
+| 10940   |
+| 10907   |
+| 11037   |
+
+**38. Janet Leverling, one of the salespeople, has come to you with a request. She thinks that she accidentally double-entered a line item on an order, with a different ProductID, but the same quantity. She remembers that the quantity was 60 or more. Show all the OrderIDs with line items that match this, in order of OrderID.**
+```SQL
+SELECT
+	OrderID,
+	Quantity
+FROM OrderDetails
+WHERE Quantity >=60
+GROUP BY OrderID, Quantity
+HAVING COUNT(*) > 1
+```
+**Result:**
+
+| OrderID |
+|---------|
+| 10263   |
+| 10263   |
+| 10990   |
+| 10658   |
+| 11030   |
 
 
 
