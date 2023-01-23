@@ -199,13 +199,509 @@ HAVING COUNT(*) > 1
 ```
 **Result:**
 
-| OrderID |
-|---------|
-| 10263   |
-| 10263   |
-| 10990   |
-| 10658   |
-| 11030   |
+| OrderID | Quantity |
+|---------|----------|
+| 10263   | 60       |
+| 10263   | 65       |
+| 10990   | 65       |
+| 10658   | 70       |
+| 11030   | 100      |
+
+**39. Based on the previous question, we now want to show details of the order, for orders that match the above criteria.**
+```SQL
+WITH cte AS(
+SELECT
+	OrderID,
+	Quantity
+FROM OrderDetails
+WHERE Quantity >=60
+GROUP BY OrderID, Quantity
+HAVING COUNT(*) > 1
+)
+SELECT
+	OrderID,
+	ProductID,
+	UnitPrice,
+	Quantity,
+	Discount
+FROM OrderDetails
+WHERE OrderID IN (SELECT OrderID FROM cte)
+ORDER BY OrderID, Quantity
+```
+**Result:**
+
+| OrderID | ProductID | UnitPrice | Quantity | Discount |
+|---------|-----------|-----------|----------|----------|
+| 10263   | 16        | 13,90     | 60       | 0,25     |
+| 10263   | 30        | 20,70     | 60       | 0,25     |
+| 10263   | 24        | 3,60      | 65       | 0        |
+| 10263   | 74        | 8,00      | 65       | 0,25     |
+| 10658   | 60        | 34,00     | 55       | 0,05     |
+| 10658   | 21        | 10,00     | 60       | 0        |
+| 10658   | 40        | 18,40     | 70       | 0,05     |
+| 10658   | 77        | 13,00     | 70       | 0,05     |
+| 10990   | 34        | 14,00     | 60       | 0,15     |
+| 10990   | 21        | 10,00     | 65       | 0        |
+| 10990   | 55        | 24,00     | 65       | 0,15     |
+| 10990   | 61        | 28,50     | 66       | 0,15     |
+| 11030   | 29        | 123,79    | 60       | 0,25     |
+| 11030   | 5         | 21,35     | 70       | 0        |
+| 11030   | 2         | 19,00     | 100      | 0,25     |
+| 11030   | 59        | 55,00     | 100      | 0,25     |
+
+
+**40. Here's another way of getting the same results as in the previous problem, using a derived table instead of a CTE. However, there's a bug in this SQL. It returns 20 rows instead of 16. Correct the SQL. Problem SQL:**
+```SQL
+SELECT
+	OrderDetails.OrderID,
+	ProductID,
+	UnitPrice,
+	Quantity,
+	Discount
+FROM OrderDetails
+	JOIN(
+		SELECT DISTINCT
+			OrderID
+		FROM OrderDetails
+		WHERE Quantity >= 60
+		GROUP BY OrderID, Quantity
+		HAVING COUNT(*) > 1
+	) PotentialProblemOrders
+		ON PotentialProblemOrders.OrderID = OrderDetails.OrderID
+	ORDER BY OrderID, ProductID
+```
+**Result:**
+
+| OrderID | ProductID | UnitPrice | Quantity | Discount |
+|---------|-----------|-----------|----------|----------|
+| 10263   | 16        | 13,90     | 60       | 0,25     |
+| 10263   | 24        | 3,60      | 65       | 0        |
+| 10263   | 30        | 20,70     | 60       | 0,25     |
+| 10263   | 74        | 8,00      | 65       | 0,25     |
+| 10658   | 21        | 10,00     | 60       | 0        |
+| 10658   | 40        | 18,40     | 70       | 0,05     |
+| 10658   | 60        | 34,00     | 55       | 0,05     |
+| 10658   | 77        | 13,00     | 70       | 0,05     |
+| 10990   | 21        | 10,00     | 65       | 0        |
+| 10990   | 34        | 14,00     | 60       | 0,15     |
+| 10990   | 55        | 24,00     | 65       | 0,15     |
+| 10990   | 61        | 28,50     | 66       | 0,15     |
+| 11030   | 2         | 19,00     | 100      | 0,25     |
+| 11030   | 5         | 21,35     | 70       | 0        |
+| 11030   | 29        | 123,79    | 60       | 0,25     |
+| 11030   | 59        | 55,00     | 100      | 0,25     |
+
+Note the Distinct keyword, added after the Select in the derived table. This gives us only distinct rows in the output, which avoids the problem with duplicate OrderIDs.
+
+**41. Some customers are complaining about their orders arriving late. Which orders are late?**
+```SQL
+SELECT 
+	OrderID,
+	CAST(OrderDate AS DATE) AS OrderDate,
+	CAST(RequiredDate AS DATE) AS RequiredDate,
+	CAST(ShippedDate AS DATE) AS ShippedDate
+FROM Orders
+WHERE ShippedDate >= RequiredDate
+ORDER BY OrderID
+```
+**Result:**
+
+| OrderID | OrderDate  | RequiredDate | ShippedDate |
+|---------|------------|--------------|-------------|
+| 10264   | 2014-07-24 | 2014-08-21   | 2014-08-23  |
+| 10271   | 2014-08-01 | 2014-08-29   | 2014-08-30  |
+| 10280   | 2014-08-14 | 2014-09-11   | 2014-09-12  |
+| 10302   | 2014-09-10 | 2014-10-08   | 2014-10-09  |
+| 10309   | 2014-09-19 | 2014-10-17   | 2014-10-23  |
+| 10380   | 2014-12-12 | 2015-01-09   | 2015-01-16  |
+| 10423   | 2015-01-23 | 2015-02-06   | 2015-02-24  |
+| 10427   | 2015-01-27 | 2015-02-24   | 2015-03-03  |
+| 10433   | 2015-02-03 | 2015-03-03   | 2015-03-04  |
+| 10451   | 2015-02-19 | 2015-03-05   | 2015-03-12  |
+| 10483   | 2015-03-24 | 2015-04-21   | 2015-04-25  |
+| 10515   | 2015-04-23 | 2015-05-07   | 2015-05-23  |
+| 10523   | 2015-05-01 | 2015-05-29   | 2015-05-30  |
+| 10545   | 2015-05-22 | 2015-06-19   | 2015-06-26  |
+| 10578   | 2015-06-24 | 2015-07-22   | 2015-07-25  |
+| 10593   | 2015-07-09 | 2015-08-06   | 2015-08-13  |
+| 10596   | 2015-07-11 | 2015-08-08   | 2015-08-12  |
+| 10660   | 2015-09-08 | 2015-10-06   | 2015-10-15  |
+| 10663   | 2015-09-10 | 2015-09-24   | 2015-10-03  |
+| 10687   | 2015-09-30 | 2015-10-28   | 2015-10-30  |
+| 10705   | 2015-10-15 | 2015-11-12   | 2015-11-18  |
+| 10709   | 2015-10-17 | 2015-11-14   | 2015-11-20  |
+| 10726   | 2015-11-03 | 2015-11-17   | 2015-12-05  |
+| 10727   | 2015-11-03 | 2015-12-01   | 2015-12-05  |
+| 10749   | 2015-11-20 | 2015-12-18   | 2015-12-19  |
+| 10777   | 2015-12-15 | 2015-12-29   | 2016-01-21  |
+| 10779   | 2015-12-16 | 2016-01-13   | 2016-01-14  |
+| 10788   | 2015-12-22 | 2016-01-19   | 2016-01-19  |
+| 10807   | 2015-12-31 | 2016-01-28   | 2016-01-30  |
+| 10816   | 2016-01-06 | 2016-02-03   | 2016-02-04  |
+| 10827   | 2016-01-12 | 2016-01-26   | 2016-02-06  |
+| 10828   | 2016-01-13 | 2016-01-27   | 2016-02-04  |
+| 10847   | 2016-01-22 | 2016-02-05   | 2016-02-10  |
+| 10924   | 2016-03-04 | 2016-04-01   | 2016-04-08  |
+| 10927   | 2016-03-05 | 2016-04-02   | 2016-04-08  |
+| 10960   | 2016-03-19 | 2016-04-02   | 2016-04-08  |
+| 10970   | 2016-03-24 | 2016-04-07   | 2016-04-24  |
+| 10978   | 2016-03-26 | 2016-04-23   | 2016-04-23  |
+| 10998   | 2016-04-03 | 2016-04-17   | 2016-04-17  |
+
+**42. Some salespeople have more orders arriving late than others. Maybe they're not following up on the order process, and need more training. Which salespeople have the most orders arriving late?**
+```SQL
+SELECT 
+	o.EmployeeID,
+	e.LastName,
+	COUNT(OrderID) AS TotalLateOrders
+FROM Orders o
+JOIN Employees e
+	ON o.EmployeeID = e.EmployeeID
+WHERE ShippedDate >= RequiredDate
+GROUP BY o.EmployeeID, e.LastName
+ORDER BY TotalLateOrders DESC
+```
+**Result:**
+
+| EmployeeID | LastName  | TotalLateOrders |
+|------------|-----------|-----------------|
+| 4          | Peacock   | 10              |
+| 3          | Leverling | 5               |
+| 8          | Callahan  | 5               |
+| 9          | Dodsworth | 5               |
+| 7          | King      | 4               |
+| 2          | Fuller    | 4               |
+| 1          | Davolio   | 3               |
+| 6          | Suyama    | 3               |
+
+**43. Andrew, the VP of sales, has been doing some more thinking about the problem of late orders. He realizes that just looking at the number of orders arriving late for each salesperson isn't a good idea. It needs to be compared against the total number of orders per salesperson.**
+```SQL
+WITH LateOrders AS(
+SELECT 
+	o.EmployeeID,
+	e.LastName,
+	COUNT(OrderID) AS TotalLateOrders
+FROM Orders o
+JOIN Employees e
+	ON o.EmployeeID = e.EmployeeID
+WHERE ShippedDate >= RequiredDate
+GROUP BY o.EmployeeID, e.LastName
+),
+TotalOrders AS (
+SELECT 
+	o.EmployeeID,
+	e.LastName,
+	COUNT(OrderID) AS TotalOrders
+FROM Orders o
+JOIN Employees e
+	ON o.EmployeeID = e.EmployeeID
+GROUP BY o.EmployeeID, e.LastName
+)
+SELECT
+	l.EmployeeID,
+	l.LastName,
+	t.TotalOrders,
+	l.TotalLateOrders
+FROM LateOrders l 
+JOIN TotalOrders t
+	ON l.EmployeeID = t.EmployeeID
+```
+**Result:**
+
+| EmployeeID | LastName  | TotalOrders | TotalLateOrders |
+|------------|-----------|-------------|-----------------|
+| 1          | Davolio   | 123         | 3               |
+| 2          | Fuller    | 96          | 4               |
+| 3          | Leverling | 127         | 5               |
+| 4          | Peacock   | 156         | 10              |
+| 6          | Suyama    | 67          | 3               |
+| 7          | King      | 72          | 4               |
+| 8          | Callahan  | 104         | 5               |
+| 9          | Dodsworth | 43          | 5               |
+
+
+**44. There's an employee missing in the answer from the problem above. Fix the SQL to show all employees who have taken orders.**
+```SQL
+WITH TotalOrders AS (
+SELECT 
+	EmployeeID,
+	COUNT(OrderID) AS TotalOrders
+FROM Orders
+GROUP BY EmployeeID
+),
+LateOrders AS(
+SELECT 
+	EmployeeID,
+	COUNT(OrderID) AS TotalLateOrders
+FROM Orders
+WHERE ShippedDate >= RequiredDate 
+GROUP BY EmployeeID
+)
+SELECT
+	t.EmployeeID,
+	e.LastName,
+	t.TotalOrders,
+	l.TotalLateOrders
+FROM TotalOrders t
+LEFT JOIN LateOrders l
+	ON t.EmployeeID = l.EmployeeID
+LEFT JOIN Employees e
+	ON t.EmployeeID = e.EmployeeID
+```
+**Result:**
+
+| EmployeeID | LastName  | TotalOrders | TotalLateOrders |
+|------------|-----------|-------------|-----------------|
+| 1          | Davolio   | 123         | 3               |
+| 2          | Fuller    | 96          | 4               |
+| 3          | Leverling | 127         | 5               |
+| 4          | Peacock   | 156         | 10              |
+| 5          | Buchanan  | 42          | NULL            |
+| 6          | Suyama    | 67          | 3               |
+| 7          | King      | 72          | 4               |
+| 8          | Callahan  | 104         | 5               |
+| 9          | Dodsworth | 43          | 5               |
+
+
+**45. Continuing on the answer for above query, let's fix the results for row 5 - Buchanan. He should have a 0 instead of a Null in LateOrders.**
+```SQL
+WITH TotalOrders AS (
+SELECT 
+	EmployeeID,
+	COUNT(OrderID) AS TotalOrders
+FROM Orders
+GROUP BY EmployeeID
+),
+LateOrders AS(
+SELECT 
+	EmployeeID,
+	COUNT(OrderID) AS TotalLateOrders
+FROM Orders
+WHERE ShippedDate >= RequiredDate 
+GROUP BY EmployeeID
+)
+SELECT
+	t.EmployeeID,
+	e.LastName,
+	t.TotalOrders,
+	CASE
+		WHEN l.TotalLateOrders IS NULL THEN 0
+		ELSE l.TotalLateOrders
+	END TotalLateOrders
+FROM TotalOrders t
+LEFT JOIN LateOrders l
+	ON t.EmployeeID = l.EmployeeID
+LEFT JOIN Employees e
+	ON t.EmployeeID = e.EmployeeID
+```
+**Result:**
+
+| EmployeeID | LastName  | TotalOrders | TotalLateOrders |
+|------------|-----------|-------------|-----------------|
+| 1          | Davolio   | 123         | 3               |
+| 2          | Fuller    | 96          | 4               |
+| 3          | Leverling | 127         | 5               |
+| 4          | Peacock   | 156         | 10              |
+| 5          | Buchanan  | 42          | 0               |
+| 6          | Suyama    | 67          | 3               |
+| 7          | King      | 72          | 4               |
+| 8          | Callahan  | 104         | 5               |
+| 9          | Dodsworth | 43          | 5               |
+
+**46. Now we want to get the percentage of late orders over total orders.**
+```SQL
+WITH TotalOrders AS (
+SELECT 
+	EmployeeID,
+	COUNT(OrderID) AS TotalOrders
+FROM Orders
+GROUP BY EmployeeID
+),
+LateOrders AS(
+SELECT 
+	EmployeeID,
+	COUNT(OrderID) AS TotalLateOrders
+FROM Orders
+WHERE ShippedDate >= RequiredDate 
+GROUP BY EmployeeID
+)
+SELECT
+	t.EmployeeID,
+	e.LastName,
+	t.TotalOrders,
+	CASE
+		WHEN l.TotalLateOrders IS NULL THEN 0
+		ELSE l.TotalLateOrders
+	END TotalLateOrders,
+	(IsNull(TotalLateOrders, 0) * 1.00) / TotalOrders AS PercentLateOrders
+FROM TotalOrders t
+LEFT JOIN LateOrders l
+	ON t.EmployeeID = l.EmployeeID
+LEFT JOIN Employees e
+	ON t.EmployeeID = e.EmployeeID
+```
+**Result:**
+
+| EmployeeID | LastName  | TotalOrders | TotalLateOrders | PercentLateOrders |
+|------------|-----------|-------------|-----------------|-------------------|
+| 1          | Davolio   | 123         | 3               | 0.0243902439024   |
+| 2          | Fuller    | 96          | 4               | 0.0416666666666   |
+| 3          | Leverling | 127         | 5               | 0.0393700787401   |
+| 4          | Peacock   | 156         | 10              | 0.0641025641025   |
+| 5          | Buchanan  | 42          | 0               | 0.0000000000000   |
+| 6          | Suyama    | 67          | 3               | 0.0447761194029   |
+| 7          | King      | 72          | 4               | 0.0555555555555   |
+| 8          | Callahan  | 104         | 5               | 0.0480769230769   |
+| 9          | Dodsworth | 43          | 5               | 0.1162790697674   |
+
+**47. So now for the PercentageLateOrders, we get a decimal value like we should. But to make the output easier to read, let's cut the PercentLateOrders off at 2 digits to the right of the decimal point.**
+```SQL
+WITH TotalOrders AS (
+SELECT 
+	EmployeeID,
+	COUNT(OrderID) AS TotalOrders
+FROM Orders
+GROUP BY EmployeeID
+),
+LateOrders AS(
+SELECT 
+	EmployeeID,
+	COUNT(OrderID) AS TotalLateOrders
+FROM Orders
+WHERE ShippedDate >= RequiredDate 
+GROUP BY EmployeeID
+)
+SELECT
+	t.EmployeeID,
+	e.LastName,
+	t.TotalOrders,
+	CASE
+		WHEN l.TotalLateOrders IS NULL THEN 0
+		ELSE l.TotalLateOrders
+	END TotalLateOrders,
+	CONVERT(
+		DECIMAL(10,2),
+			(IsNull(TotalLateOrders, 0) * 1.00) / TotalOrders) AS PercentLateOrders
+FROM TotalOrders t
+LEFT JOIN LateOrders l
+	ON t.EmployeeID = l.EmployeeID
+LEFT JOIN Employees e
+	ON t.EmployeeID = e.EmployeeID
+```
+**Result:**
+
+| EmployeeID | LastName  | TotalOrders | TotalLateOrders | PercentLateOrders |
+|------------|-----------|-------------|-----------------|-------------------|
+| 1          | Davolio   | 123         | 3               | 0.02              |
+| 2          | Fuller    | 96          | 4               | 0.04              |
+| 3          | Leverling | 127         | 5               | 0.04              |
+| 4          | Peacock   | 156         | 10              | 0.06              |
+| 5          | Buchanan  | 42          | 0               | 0.00              |
+| 6          | Suyama    | 67          | 3               | 0.04              |
+| 7          | King      | 72          | 4               | 0.06              |
+| 8          | Callahan  | 104         | 5               | 0.05              |
+| 9          | Dodsworth | 43          | 5               | 0.12              |
+
+**48. Andrew Fuller, the VP of sales at Northwind, would like to do a sales campaign for existing customers. He'd like to categorize customers into groups, based
+on how much they ordered in 2016. Then, depending on which group the customer is in, he will target the customer with different sales materials.
+The customer grouping categories are 0 to 1,000, 1,000 to 5,000, 5,000 to 10,000, and over 10,000. Order the results by CustomerID.**
+```SQL
+WITH cte AS(
+SELECT
+	o.CustomerID,
+	c.CompanyName,
+	SUM(d.Quantity * d.UnitPrice) AS TotalAmount
+FROM Orders o
+LEFT JOIN OrderDetails d
+	ON o.OrderID = d.OrderID
+LEFT JOIN Customers C
+	ON o.CustomerID = c.CustomerID
+WHERE YEAR(o.OrderDate) = 2016 
+GROUP BY o.CustomerID, c.CompanyName
+)
+SELECT TOP(10)
+	*,
+	CASE
+		WHEN TotalAmount <= 1000 THEN 'Low'
+		WHEN TotalAmount <= 5000 THEN 'Medium'
+		WHEN TotalAmount <= 10000 THEN 'High'
+		WHEN TotalAmount > 10000 THEN 'Very High'
+		ELSE 'NoGroup'
+	END Categories
+FROM cte
+ORDER BY CustomerID
+```
+**Result:**
+
+- 81 rows were affeted, showing only the top 10
+
+| CustomerID | CompanyName                        | TotalAmount | Categories |
+|------------|------------------------------------|-------------|------------|
+| ALFKI      | Alfreds Futterkiste                | 2302,20     | Medium     |
+| ANATR      | Ana Trujillo Emparedados y helados | 514,40      | Low        |
+| ANTON      | Antonio Moreno Taquería            | 660,00      | Low        |
+| AROUT      | Around the Horn                    | 5838,50     | High       |
+| BERGS      | Berglunds snabbköp                 | 8110,55     | High       |
+| BLAUS      | Blauer See Delikatessen            | 2160,00     | Medium     |
+| BLONP      | Blondesddsl père et fils           | 730,00      | Low        |
+| BOLID      | Bólido Comidas preparadas          | 280,00      | Low        |
+| BONAP      | Bon app'                           | 7185,90     | High       |
+| BOTTM      | Bottom-Dollar Markets              | 12227,40    | Very High  |
+
+**50. Based on the above query, show all the defined CustomerGroups, and the percentage in each. Sort by the total in each group, in descending order.**
+```SQL
+WITH cte AS(
+SELECT
+	o.CustomerID,
+	c.CompanyName,
+	SUM(d.Quantity * d.UnitPrice) AS TotalAmount
+FROM Orders o
+LEFT JOIN OrderDetails d
+	ON o.OrderID = d.OrderID
+LEFT JOIN Customers C
+	ON o.CustomerID = c.CustomerID
+WHERE YEAR(o.OrderDate) = 2016 
+GROUP BY o.CustomerID, c.CompanyName
+),
+GroupCategories AS (
+SELECT
+	*,
+	CASE
+		WHEN TotalAmount <= 1000 THEN 'Low'
+		WHEN TotalAmount <= 5000 THEN 'Medium'
+		WHEN TotalAmount <= 10000 THEN 'High'
+		WHEN TotalAmount > 10000 THEN 'Very High'
+		ELSE 'NoGroup'
+	END Categories
+FROM cte
+)
+SELECT
+	g.Categories,
+	COUNT(*) AS TotalInGrooup,
+	COUNT(*)*1.0 / (SELECT COUNT(*) FROM GroupCategories) AS PercentageInGroup
+FROM GroupCategories g
+GROUP BY g.Categories
+ORDER BY TotalInGrooup DESC
+```
+**Result:**
+
+| Categories | TotalInGrooup | PercentageInGroup |
+|------------|---------------|-------------------|
+| Medium     | 35            | 0.432098765432    |
+| Low        | 20            | 0.246913580246    |
+| High       | 13            | 0.160493827160    |
+| Very High  | 13            | 0.160493827160    |
+
+**51. Andrew, the VP of Sales is still thinking about how best to group customers, and define low, medium, high, and very high value customers. He now wants complete flexibility in grouping the customers, based on the dollar amount they've ordered. He doesn’t want to have to edit SQL in order to change the boundaries of the customer groups.
+How would you write the SQL?
+There's a table called CustomerGroupThreshold that you will need to use. Use only orders from 2016.**
+```SQL
+```
+**Result:**
+
+
+
+
 
 
 
