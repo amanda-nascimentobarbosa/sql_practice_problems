@@ -696,32 +696,297 @@ ORDER BY TotalInGrooup DESC
 How would you write the SQL?
 There's a table called CustomerGroupThreshold that you will need to use. Use only orders from 2016.**
 ```SQL
+WITH cte AS(
+SELECT
+	o.CustomerID,
+	c.CompanyName,
+	SUM(d.Quantity * d.UnitPrice) AS TotalAmount
+FROM Orders o
+LEFT JOIN OrderDetails d
+	ON o.OrderID = d.OrderID
+LEFT JOIN Customers C
+	ON o.CustomerID = c.CustomerID
+WHERE YEAR(o.OrderDate) = 2016 
+GROUP BY o.CustomerID, c.CompanyName
+)
+SELECT TOP(10)
+	c.CustomerID,
+	c.CompanyName,
+	c.TotalAmount,
+	g.CustomerGroupName
+FROM cte c
+JOIN CustomerGroupThresholds g
+	ON c.TotalAmount BETWEEN g.RangeBottom AND g.RangeTop
+ORDER BY c.CustomerID
 ```
 **Result:**
 
+- 81 rows were affeted, showing only the top 10
 
+| CustomerID | CompanyName                        | TotalAmount | CustomerGroupName |
+|------------|------------------------------------|-------------|-------------------|
+| ALFKI      | Alfreds Futterkiste                | 2302,20     | Medium            |
+| ANATR      | Ana Trujillo Emparedados y helados | 514,40      | Low               |
+| ANTON      | Antonio Moreno Taquería            | 660,00      | Low               |
+| AROUT      | Around the Horn                    | 5838,50     | High              |
+| BERGS      | Berglunds snabbköp                 | 8110,55     | High              |
+| BLAUS      | Blauer See Delikatessen            | 2160,00     | Medium            |
+| BLONP      | Blondesddsl père et fils           | 730,00      | Low               |
+| BOLID      | Bólido Comidas preparadas          | 280,00      | Low               |
+| BONAP      | Bon app'                           | 7185,90     | High              |
+| BOTTM      | Bottom-Dollar Markets              | 12227,40    | Very High         |
 
+**52. Some Northwind employees are planning a business trip, and would like to visit as many suppliers and customers as possible. For their planning, they’d like
+to see a list of all countries where suppliers and/or customers are based.**
+```SQL
+SELECT Country FROM Suppliers
+UNION
+SELECT Country FROM Customers
+ORDER BY Country
+```
+**Result:**
 
+| Country     |
+|-------------|
+| Argentina   |
+| Australia   |
+| Austria     |
+| Belgium     |
+| Brazil      |
+| Canada      |
+| Denmark     |
+| Finland     |
+| France      |
+| Germany     |
+| Ireland     |
+| Italy       |
+| Japan       |
+| Mexico      |
+| Netherlands |
+| Norway      |
+| Poland      |
+| Portugal    |
+| Singapore   |
+| Spain       |
+| Sweden      |
+| Switzerland |
+| UK          |
+| USA         |
+| Venezuela   |
 
+**53. The employees going on the business trip don’t want just a raw list of countries, they want more details. We’d like to see one column with the suppliers country and other with customers country.**
+```SQL
+WITH SupplierCountries AS(
+SELECT 
+	DISTINCT Country
+FROM Suppliers
+),
+CustomerCountries AS(
+SELECT
+	DISTINCT Country
+FROM Customers
+)
+SELECT
+	s.Country As SupplierCountries,
+	c.Country AS CustomerCountry
+FROM SupplierCountries s
+FULL OUTER JOIN Customers c
+	ON s.Country = c.Country
+GROUP BY s.Country, c.Country
+```
+**Result:**
 
+| SupplierCountries | CustomerCountry |
+|-------------------|-----------------|
+| NULL              | Argentina       |
+| NULL              | Austria         |
+| NULL              | Belgium         |
+| NULL              | Ireland         |
+| NULL              | Mexico          |
+| NULL              | Poland          |
+| NULL              | Portugal        |
+| NULL              | Switzerland     |
+| NULL              | Venezuela       |
+| Australia         | NULL            |
+| Brazil            | Brazil          |
+| Canada            | Canada          |
+| Denmark           | Denmark         |
+| Finland           | Finland         |
+| France            | France          |
+| Germany           | Germany         |
+| Italy             | Italy           |
+| Japan             | NULL            |
+| Netherlands       | NULL            |
+| Norway            | Norway          |
+| Singapore         | NULL            |
+| Spain             | Spain           |
+| Sweden            | Sweden          |
+| UK                | UK              |
+| USA               | USA             |
 
+**54. The output of the above is improved, but it’s still not ideal. What we’d really like to see is the country name, the total suppliers, and the total customers.**
+```SQL
+WITH SupplierCountries AS (
+SELECT 
+	Country, 
+	Count(*) AS Total
+FROM Suppliers 
+GROUP BY Country
+),
+CustomerCountries AS (
+SELECT 
+	Country, 
+	Count(*) AS Total
+FROM Customers 
+GROUP BY Country
+)
+SELECT
+	 ISNULL(SupplierCountries.Country, CustomerCountries.Country) AS Country,
+	 ISNULL(SupplierCountries.Total,0) AS TotalSuppliers,
+	 ISNULL(CustomerCountries.Total,0) AS TotalCustomers
+FROM SupplierCountries
+	FULL OUTER JOIN CustomerCountries
+		ON CustomerCountries.Country = SupplierCountries.Country
+```
+**Result:**
 
+| Country     | TotalSuppliers | TotalCustomers |
+|-------------|----------------|----------------|
+| Argentina   | 0              | 3              |
+| Australia   | 2              | 0              |
+| Austria     | 0              | 2              |
+| Belgium     | 0              | 2              |
+| Brazil      | 1              | 9              |
+| Canada      | 2              | 3              |
+| Denmark     | 1              | 2              |
+| Finland     | 1              | 2              |
+| France      | 3              | 11             |
+| Germany     | 3              | 11             |
+| Ireland     | 0              | 1              |
+| Italy       | 2              | 3              |
+| Japan       | 2              | 0              |
+| Mexico      | 0              | 5              |
+| Netherlands | 1              | 0              |
+| Norway      | 1              | 1              |
+| Poland      | 0              | 1              |
+| Portugal    | 0              | 2              |
+| Singapore   | 1              | 0              |
+| Spain       | 1              | 5              |
+| Sweden      | 2              | 2              |
+| Switzerland | 0              | 2              |
+| UK          | 2              | 7              |
+| USA         | 4              | 13             |
+| Venezuela   | 0              | 4              |
 
+**55. Looking at the Orders table—we’d like to show details for each order that was the first in that particular country, ordered by OrderID. So, we need one row per ShipCountry, and CustomerID, OrderID, and OrderDate should be of the first order from that country.**
+```SQL
+WITH CTE as(
+SELECT 
+	ShipCountry,
+	CustomerID,
+	OrderID,
+	CONVERT(DATE, OrderDate) AS OrderDate,
+	ROW_NUMBER() OVER (PARTITION BY ShipCountry ORDER BY ShipCountry, OrderID) AS OrderNumber
+FROM Orders
+)
+SELECT 
+	ShipCountry,
+	CustomerID,
+	OrderID,
+	OrderDate
+FROM CTE
+WHERE OrderNumber = 1
+```
+**Result:**
 
+| ShipCountry | CustomerID | OrderID | OrderDate  |
+|-------------|------------|---------|------------|
+| Argentina   | OCEAN      | 10409   | 2015-01-09 |
+| Austria     | ERNSH      | 10258   | 2014-07-17 |
+| Belgium     | SUPRD      | 10252   | 2014-07-09 |
+| Brazil      | HANAR      | 10250   | 2014-07-08 |
+| Canada      | MEREP      | 10332   | 2014-10-17 |
+| Denmark     | SIMOB      | 10341   | 2014-10-29 |
+| Finland     | WARTH      | 10266   | 2014-07-26 |
+| France      | VINET      | 10248   | 2014-07-04 |
+| Germany     | TOMSP      | 10249   | 2014-07-05 |
+| Ireland     | HUNGO      | 10298   | 2014-09-05 |
+| Italy       | MAGAA      | 10275   | 2014-08-07 |
+| Mexico      | CENTC      | 10259   | 2014-07-18 |
+| Norway      | SANTG      | 10387   | 2014-12-18 |
+| Poland      | WOLZA      | 10374   | 2014-12-05 |
+| Portugal    | FURIB      | 10328   | 2014-10-14 |
+| Spain       | ROMEY      | 10281   | 2014-08-14 |
+| Sweden      | FOLKO      | 10264   | 2014-07-24 |
+| Switzerland | CHOPS      | 10254   | 2014-07-11 |
+| UK          | BSBEV      | 10289   | 2014-08-26 |
+| USA         | RATTC      | 10262   | 2014-07-22 |
+| Venezuela   | HILAA      | 10257   | 2014-07-16 |
 
+**56. There are some customers for whom freight is a major expense when ordering from Northwind. However, by batching up their orders, and making one larger order instead of multiple smaller orders in a short period of time, they could reduce their freight costs significantly.
+Show those customers who have made more than 1 order in a 5 day period. The sales people will use this to help customers reduce their costs.**
+```SQL
+SELECT TOP(10)
+	InitialOrder.CustomerID,
+	InitialOrder.OrderID AS InitialOrderID,
+	InitialOrder.OrderDate AS InitialOrderDate,
+	NextOrder.OrderID AS NextOrderID,
+	NextOrder.OrderDate AS NextOrderDate,
+	DATEDIFF(dd, InitialOrder.OrderDate, NextOrder.OrderDate) AS DaysBetween
+FROM Orders InitialOrder
+JOIN Orders NextOrder
+	ON InitialOrder.CustomerID = NextOrder.CustomerID
+WHERE InitialOrder.OrderID < NextOrder.OrderID AND DATEDIFF(dd, InitialOrder.OrderDate, NextOrder.OrderDate) <= 5
+ORDER BY InitialOrder.CustomerID, InitialOrder.OrderID
+```
+**Result:**
 
+- 71 rows were affeted, showing only the top 10
 
+| CustomerID | InitialOrderID | InitialOrderDate        | NextOrderID | NextOrderDate           | DaysBetween |
+|------------|----------------|-------------------------|-------------|-------------------------|-------------|
+| ANTON      | 10677          | 2015-09-22 20:00:00.000 | 10682       | 2015-09-25 04:00:00.000 | 3           |
+| AROUT      | 10741          | 2015-11-14 10:00:00.000 | 10743       | 2015-11-17 18:00:00.000 | 3           |
+| BERGS      | 10278          | 2014-08-12 14:00:00.000 | 10280       | 2014-08-14 10:00:00.000 | 2           |
+| BERGS      | 10444          | 2015-02-12 11:00:00.000 | 10445       | 2015-02-13 20:00:00.000 | 1           |
+| BERGS      | 10866          | 2016-02-03 01:00:00.000 | 10875       | 2016-02-06 21:00:00.000 | 3           |
+| BONAP      | 10730          | 2015-11-05 07:00:00.000 | 10732       | 2015-11-06 15:00:00.000 | 1           |
+| BONAP      | 10871          | 2016-02-05 19:00:00.000 | 10876       | 2016-02-09 17:00:00.000 | 4           |
+| BONAP      | 10932          | 2016-03-06 01:00:00.000 | 10940       | 2016-03-11 02:00:00.000 | 5           |
+| BOTTM      | 10410          | 2015-01-10 18:00:00.000 | 10411       | 2015-01-10 21:00:00.000 | 0           |
+| BOTTM      | 10944          | 2016-03-12 04:00:00.000 | 10949       | 2016-03-13 13:00:00.000 | 1           |
 
+**57. There’s another way of solving the problem above, using Window functions. We would like to see the following results.**
+```SQL
+WITH cte AS(
+SELECT
+	CustomerID,
+	CONVERT(DATE, OrderDate) AS OrderDate,
+	CONVERT(DATE, LEAD(OrderDate,1) OVER (PARTITION BY CustomerID ORDER BY CustomerID, OrderDate)) AS NextOrderDate
+FROM Orders
+--ORDER BY CustomerID, OrderID
+)
+SELECT
+	cte.CustomerID,
+	cte.OrderDate,
+	cte.NextOrderDate,
+	DATEDIFF(DD, cte.OrderDate, cte.NextOrderDate) AS DaysBetweenOrders
+FROM cte
+WHERE DATEDIFF(DD, cte.OrderDate, cte.NextOrderDate) <=5
+```
+**Result:**
 
+- 69 rows were affeted, showing only the top 10
 
-
-
-
-
-
-
-
-
-
-
-
+| CustomerID | OrderDate  | NextOrderDate | DaysBetweenOrders |
+|------------|------------|---------------|-------------------|
+| ANTON      | 2015-09-22 | 2015-09-25    | 3                 |
+| AROUT      | 2015-11-14 | 2015-11-17    | 3                 |
+| BERGS      | 2014-08-12 | 2014-08-14    | 2                 |
+| BERGS      | 2015-02-12 | 2015-02-13    | 1                 |
+| BERGS      | 2016-02-03 | 2016-02-06    | 3                 |
+| BONAP      | 2015-11-05 | 2015-11-06    | 1                 |
+| BONAP      | 2016-02-05 | 2016-02-09    | 4                 |
+| BONAP      | 2016-03-06 | 2016-03-11    | 5                 |
+| BOTTM      | 2015-01-10 | 2015-01-10    | 0                 |
+| BOTTM      | 2016-03-12 | 2016-03-13    | 1                 |
